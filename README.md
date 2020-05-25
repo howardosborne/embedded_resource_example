@@ -1,16 +1,18 @@
 # How to include embedded resources in Locust
 
-For JMeter users, there are a number of features which don’t come with Locust but you can still implement with relative ease.
+For JMeter users, there are a number of features that don’t come with Locust but you can still implement with relative ease.
 
 One of those useful features in JMeter is the option to retrieve embedded resources.
-![alt text](../resources/jmeter_screenshot.png "JMeter Embedded Resources")
-By default, JMeter uses the [Lagarto HTML Parser](https://jodd.org/lagarto/) to obtain resources and if you have been using it, you’ll realise that whilst it isn’t perfect, it is a good enough approximation to what a real browser would do to be effective.
+
+![JMeter Embedded Resources](./resources/jmeter_screenshot.png "JMeter Embedded Resources")
+
+By default, JMeter uses the [Lagarto HTML Parser](https://jodd.org/lagarto/) to obtain resources and if you have been using it, you’ll realise that whilst it isn’t perfect, it is a good enough approximation to a full-fat browser to be effective.
 
 So, how can we do this in Locust?
 
 In the simple example below, we will capture the most commonly referenced resources using the [lxml library](https://lxml.de/) which allows us to find elements by xPath. A more complex example will be added later.
 
-Here’s the full example:
+Here’s the full code:
 
 ```python
 from locust import HttpUser, task, events, constant
@@ -100,7 +102,8 @@ To keep reporting simple we have provided a name argument and then appended “_
 name=name+"_resources"
 ```
 When we run it, we get a breakdown like this
-![alt text](../resources/locust_screenshot.png "Locust Dashboard")
+
+![alt text](./resources/locust_screenshot.png "Locust Dashboard")
 
 
 If you would like any more information, just let me know.
