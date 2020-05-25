@@ -103,6 +103,6 @@ name=name+"_resources"
 ```
 When we run it, we get a breakdown like this
 
-![Locust Dashboard](./resources/locust_screenshot.png "Locust Dashboard")
+![Locust Dashboard](./resources/locust_dashboard.png "Locust Dashboard")
 
 If you would like any more information, just let me know.
