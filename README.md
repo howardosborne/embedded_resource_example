@@ -10,7 +10,7 @@ By default, JMeter uses the [Lagarto HTML Parser](https://jodd.org/lagarto/) to 
 
 So, how can we do this in Locust?
 
-In the simple example below, we will capture the most commonly referenced resources using the [lxml library](https://lxml.de/) which allows us to find elements by xPath. A more complex example will be added later.
+In the example below, we will capture the most commonly referenced resources using the [lxml library](https://lxml.de/) which allows us to find elements by xPath.
 
 Here’s the full code:
 
@@ -47,7 +47,7 @@ class HttpUserWithContent(HttpUser):
 
 Now let’s break it down
 
-First, we create a list of xpath expressions which obtain stylesheets, javascript files and images and other embedded resources.
+First, we create a list of xPath expressions which obtain stylesheets, JavaScript files, images and other embedded resources.
 
 ```python
 resource_paths = ['//link/@href', '//script/@src','//img/@src', '//source/@src', '//embed/@src']
@@ -103,8 +103,6 @@ name=name+"_resources"
 ```
 When we run it, we get a breakdown like this
 
-![alt text](./resources/locust_screenshot.png "Locust Dashboard")
-
+![Locust Dashboard](./resources/locust_screenshot.png "Locust Dashboard")
 
 If you would like any more information, just let me know.
-
