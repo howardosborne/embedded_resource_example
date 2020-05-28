@@ -2,7 +2,6 @@ from locust import HttpUser, task, events, constant
 import time
 from lxml import html
 import re
-import functools
 
 resource_paths = ['//link/@href', '//script/@src','//img/@src', '//source/@src', '//embed/@src']
 
@@ -14,9 +13,7 @@ def get_embedded_resources(response_content, filter='.*'):
             if re.search(filter, resource): resources.append(resource)
     return resources
 	
-class HttpUserWithContent(HttpUser):
-    host = "https://www.demoblaze.com"
-    wait_time = constant(10)   
+class HttpUserWithContent(HttpUser):  
     def __init__(self, parent):
         super().__init__(parent)
         self.client.get = self._request(self.client.get)

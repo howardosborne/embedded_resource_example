@@ -5,8 +5,10 @@ import re
 
 #for finding url links in style tags
 url_link_pattern = re.compile("URL\(\s*('|\")(.*)('|\")\s*\)",re.IGNORECASE | re.MULTILINE)
+
 #for finding if a link is partial or full
 full_url_pattern = re.compile("^https?://",re.IGNORECASE)
+
 resource_paths = ['//link[@rel="stylesheet"]/@href', '//link[@rel="Stylesheet"]/@href',
     '//link[@rel="STYLESHEET"]/@href','//script/@src',
     '//img/@src', '//source/@src', '//embed/@src',
