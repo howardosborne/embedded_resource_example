@@ -7,7 +7,7 @@ class EmbeddedResourceManager():
     """
     def __init__(self):
         #for finding url links in style tags
-        self.url_link_pattern = re.compile("URL\(\s*('|\")(.*)('|\")\s*\)",re.IGNORECASE | re.MULTILINE)
+        self.url_link_pattern = re.compile(".*URL\(\s*('|\")(.*)('|\")\s*\).*",re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
         #for finding if a link is partial or full
         self.full_url_pattern = re.compile("^https?://",re.IGNORECASE)
@@ -48,7 +48,9 @@ class EmbeddedResourceManager():
                 #check for url
                 url_matches = re.match(self.url_link_pattern,text)
                 if url_matches != None:
-                    for url_match in url_matches:
-                        print(url_match.group())
+                    resource = url_matches[2]
+                    if re.search(self.full_url_pattern, resource) == None: resource = base_path + "/" + resource
+                    if re.search(filter, resource):
+                        resources.append(resource)
             if cache_resources == True: resource_link_cache[response_content] = resources
             return resources
