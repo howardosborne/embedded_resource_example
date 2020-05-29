@@ -27,6 +27,16 @@ class TestERM(unittest.TestCase):
         resources = self.erm.get_embedded_resources(content)
         self.assertRegex(resources[0],"http:\/\/basehost\/style.css")
 
+    def test_empty(self):
+        content = ""
+        resources = self.erm.get_embedded_resources(content)
+        self.assertEqual(len(resources), 0)
+
+    def test_badly_formed_html(self):
+        content = "<htfdf></>"
+        resources = self.erm.get_embedded_resources(content)
+        self.assertEqual(len(resources), 0)
+
     def test_resource_count(self):
         content = """
         <html>

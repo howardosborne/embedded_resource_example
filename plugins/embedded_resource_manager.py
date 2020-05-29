@@ -1,6 +1,6 @@
-from lxml import html
+from lxml import html, etree
 import logging
-import re 
+import re
 
 class EmbeddedResourceManager():
     """
@@ -15,16 +15,16 @@ class EmbeddedResourceManager():
         self.bundle_resource_stats = bundle_resource_stats
 
         #for finding url links in style tags
-        self.url_link_pattern = re.compile(".*URL\(\s*('|\")(.*)('|\")\s*\).*",re.IGNORECASE | re.MULTILINE | re.DOTALL)
+        self.url_link_pattern = re.compile(r".*URL\(\s*('|\")(.*)('|\")\s*\).*", re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
         #for finding if a link is partial or full
-        self.full_url_pattern = re.compile("^https?://",re.IGNORECASE)
+        self.full_url_pattern = re.compile("^https?://", re.IGNORECASE)
 
         self.resource_paths = ['//link[@rel="stylesheet"]/@href', '//link[@rel="Stylesheet"]/@href',
-        '//link[@rel="STYLESHEET"]/@href','//script/@src',
+        '//link[@rel="STYLESHEET"]/@href', '//script/@src',
         '//img/@src', '//source/@src', '//embed/@src',
         '//body/@background', '//input[@type="image"]/@src',
-        '//input[@type="IMAGE"]/@src','//input[@type="Image"]/@src',
+        '//input[@type="IMAGE"]/@src', '//input[@type="Image"]/@src',
         '//object/@data', '//frame/@src', '//iframe/@src']
 
         #
@@ -32,15 +32,15 @@ class EmbeddedResourceManager():
         self.client.request = self._request(self.client.request)
         self.host = user.host
 
-    def get_embedded_resources(self,response_content, filter='.*'):
+    def get_embedded_resources(self, response_content, resource_filter='.*'):
         """
         returns a list of embedded resources in response_content
         provide a regex filter to limit what resources are returned
         """
-        if self.cache_resource_links == True and response_content in self.resource_link_cache:
-               return self.resource_link_cache[response_content]
+        resources = []
+        if self.cache_resource_links and response_content in self.resource_link_cache:
+            resources = self.resource_link_cache[response_content]
         else:
-            resources = []
             try:
                 tree = html.fromstring(response_content)
                 #check for base tag - otherwise use host for partial urls
@@ -49,23 +49,26 @@ class EmbeddedResourceManager():
                 #build resource list
                 for resource_path in self.resource_paths:
                     for resource in tree.xpath(resource_path):
-                        if re.search(self.full_url_pattern, resource) == None: resource = base_path + "/" + resource
-                        if re.search(filter, resource):
+                        if re.search(self.full_url_pattern, resource) is None:
+                            resource = base_path + "/" + resource
+                        if re.search(resource_filter, resource):
                             resources.append(resource)
                 #add style urls
                 style_tag_texts = tree.xpath('//style/text()')
                 for text in style_tag_texts:
                     #check for url
-                    url_matches = re.match(self.url_link_pattern,text)
-                    if url_matches != None:
+                    url_matches = re.match(self.url_link_pattern, text)
+                    if url_matches is not None:
                         resource = url_matches[2]
-                        if re.search(self.full_url_pattern, resource) == None: resource = base_path + "/" + resource
-                        if re.search(filter, resource):
+                        if re.search(self.full_url_pattern, resource) is None:
+                            resource = base_path + "/" + resource
+                        if re.search(resource_filter, resource):
                             resources.append(resource)
-                if self.cache_resource_links == True: self.resource_link_cache[response_content] = resources
-            except:
-                logging.warning("Could not get embedded resources from: " + str(response_content))
-            return resources
+                if self.cache_resource_links:
+                    self.resource_link_cache[response_content] = resources
+            except etree.ParserError as e:
+                logging.warning("parser error: " + str(e) + str(response_content))
+        return resources
 
     def _request(self, func):
         def wrapper(*args, **kwargs):
@@ -75,19 +78,17 @@ class EmbeddedResourceManager():
                 del kwargs['include_resources']
             else:
                 include_resources = False
-            
-            response = func(*args,**kwargs)
+
+            response = func(*args, **kwargs)
             if include_resources:
                 content = response.content
-                if isinstance(content,bytearray): content = content.decode("utf-8")
+                if isinstance(content, bytearray):
+                    content = content.decode("utf-8")
                 resources = self.get_embedded_resources(content)
-                if 'name' in kwargs:
-                    name = kwargs['name']
-                else:
-                    name = args[0]
+                name = kwargs.get('name', args[0])
                 for resource in resources:
                     #determine name for the resource
                     resource_name = name+"_resources" if self.bundle_resource_stats else resource
-                    self.client.request("GET",resource, name=resource_name)
+                    self.client.request("GET", resource, name=resource_name)
             return response
         return wrapper
