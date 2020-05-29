@@ -3,9 +3,15 @@ sys.path.append(os.getcwd())
 from plugins.embedded_resource_manager import EmbeddedResourceManager
 import unittest
 
+class client:
+    def request(self):
+        pass
+
 class TestERM(unittest.TestCase):
     def setUp(self):
-        self.erm = EmbeddedResourceManager()
+        self.host = "http://localhost"
+        self.client = client()
+        self.erm = EmbeddedResourceManager(self)
 
     def test_base(self):
         content = """
@@ -18,7 +24,7 @@ class TestERM(unittest.TestCase):
             </body>
         </html>
         """
-        resources = self.erm.get_embedded_resources(content,"http://notbasehost")
+        resources = self.erm.get_embedded_resources(content)
         self.assertRegex(resources[0],"http:\/\/basehost\/style.css")
 
     def test_resource_count(self):
@@ -33,7 +39,7 @@ class TestERM(unittest.TestCase):
             </body>
         </html>
         """
-        resources = self.erm.get_embedded_resources(content,"http://localhost")
+        resources = self.erm.get_embedded_resources(content)
         self.assertEqual(len(resources), 3)
 
     def test_style(self):
@@ -48,7 +54,7 @@ class TestERM(unittest.TestCase):
             </body>
         </html>
         """
-        resources = self.erm.get_embedded_resources(content,"http://localhost")
+        resources = self.erm.get_embedded_resources(content)
         self.assertRegex(resources[0],"http:\/\/localhost\/cheese.gif")
 
     def test_all_types(self):
@@ -77,7 +83,7 @@ class TestERM(unittest.TestCase):
             </body>
         </html>
         """
-        resources = self.erm.get_embedded_resources(content,"http://localhost")
+        resources = self.erm.get_embedded_resources(content)
         self.assertIn("http://localhost/style.css",resources)
         self.assertIn("http://localhost/ucase_style.css",resources)
         self.assertIn("http://localhost/cap_style.css",resources)
