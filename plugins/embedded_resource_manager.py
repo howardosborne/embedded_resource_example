@@ -14,7 +14,7 @@ class EmbeddedResourceManager:
         self.resource_link_cache = {}
         # bundle all stats into single line for each request (_resources)
         self.bundle_resource_stats = bundle_resource_stats
-        self.resource_filter = default_resource_filter
+        self.resource_filter_pattern = re.compile(default_resource_filter)
         self.include_resources = include_resources_by_default
         # for finding url links in style tags
         self.url_link_pattern = re.compile(
@@ -53,7 +53,11 @@ class EmbeddedResourceManager:
         """
         resources = []
         #check if defaults have been overridden for this request
-        resource_filter = kwargs.get("resource_filter", self.resource_filter)
+        if "resource_filter" in kwargs:
+            resource_filter_pattern = re.compile(kwargs['resource_filter'])
+        else:
+            resource_filter_pattern = self.resource_filter_pattern
+
         if self.cache_resource_links and response_content in self.resource_link_cache:
             resources = self.resource_link_cache[response_content]
         else:
@@ -69,7 +73,7 @@ class EmbeddedResourceManager:
                     for resource in tree.xpath(resource_path):
                         if re.search(self.full_url_pattern, resource) is None:
                             resource = base_path + "/" + resource
-                        if re.search(resource_filter, resource):
+                        if re.search(resource_filter_pattern, resource):
                             resources.append(resource)
                 # add style urls
                 style_tag_texts = tree.xpath("//style/text()")
@@ -80,7 +84,7 @@ class EmbeddedResourceManager:
                         resource = url_matches[2]
                         if re.search(self.full_url_pattern, resource) is None:
                             resource = base_path + "/" + resource
-                        if re.search(resource_filter, resource):
+                        if re.search(resource_filter_pattern, resource):
                             resources.append(resource)
                 if self.cache_resource_links:
                     self.resource_link_cache[response_content] = resources
@@ -106,10 +110,11 @@ class EmbeddedResourceManager:
                 name = kwargs.get("name", args[0])
                 for resource in resources:
                     # determine name for the resource
-                    resource_name = (
-                        name + "_resources" if self.bundle_resource_stats else resource
-                    )
-                    self.client.request("GET", resource, name=resource_name)
+                    if self.bundle_resource_stats:
+                        resource_name = name + "_resources"
+                    else:
+                        resource_name = resource
+                    self.client.request("GET", resource, name=resource_name, include_resources=False)
             return response
 
         return wrapper

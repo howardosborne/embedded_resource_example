@@ -8,11 +8,10 @@ import time
 class test(FastHttpUser):
     
     def on_start(self):
-        EmbeddedResourceManager(self)
-
+        EmbeddedResourceManager(self,include_resources_by_default=True, bundle_resource_stats=False, default_resource_filter=".*[^(css)]$", cache_resource_links=False)
     @task
     def include_resources_true(self):
-        name = "include resources_true"
+        name = "include_resources_true"
         response = self.client.get("/", name=name, include_resources=True)
 
     @task
