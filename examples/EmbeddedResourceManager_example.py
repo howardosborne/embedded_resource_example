@@ -8,7 +8,7 @@ import time
 class test(FastHttpUser):
     
     def on_start(self):
-        EmbeddedResourceManager(self,cache_resource_links=True)
+        EmbeddedResourceManager(self)
 
     @task
     def include_resources_true(self):

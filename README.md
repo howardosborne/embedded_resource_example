@@ -10,99 +10,84 @@ By default, JMeter uses the [Lagarto HTML Parser](https://jodd.org/lagarto/) to 
 
 So, how can we do this in Locust?
 
-In the example below, we will capture the most commonly referenced resources using the [lxml library](https://lxml.de/) which allows us to find elements by xPath.
-
-Here’s the full code:
+Below is an example using the Embedded Resource Manager plugin, but if you want a simple guide to making something from scratch, have a look [here](.\manual_example.md) instead.
 
 ```python
-from locust import HttpUser, task, events, constant
-import time
-from lxml import html
-import re
- 
-resource_paths = ['//link/@href', '//script/@src','//img/@src', '//source/@src', '//embed/@src']
- 
-def get_embedded_resources(response_content, filter='.*'):
-    resources = []
-    tree = html.fromstring(response_content)
-    for resource_path in resource_paths:
-        for resource in tree.xpath(resource_path):
-            if re.search(filter, resource): resources.append(resource)
-    return resources
+from plugins.embedded_resource_manager import EmbeddedResourceManager
+
+class test(FastHttpUser):
     
-        
-class HttpUserWithContent(HttpUser):
-    host = "https://www.demoblaze.com"
-    wait_time = constant(1)
-    
+    def on_start(self):
+        EmbeddedResourceManager(self)
+
     @task
-    def t(self):
-        name = "/"
-        response = self.client.get("/", name=name)
-        resources = get_embedded_resources(response.content)
-        for resource in resources:
-            if re.search("^https?://", resource) == None: resource = self.host + "/" + resource          
-            self.client.get(resource, name=name+"_resources")
-``` 
+    def include_resources_true(self):
+        name = "include_resources_true"
+        response = self.client.get("/", name=name, include_resources=True)
 
-Now let’s break it down
-
-First, we create a list of xPath expressions which obtain stylesheets, JavaScript files, images and other embedded resources.
-
-```python
-resource_paths = ['//link/@href', '//script/@src','//img/@src', '//source/@src', '//embed/@src']
-```
-
-Then we declare a function to look for resources in a page. It takes the html response as an argument and, like the JMeter feature, also a filter to allow resources that do not match the pattern to be excluded.
-
-```python
-def get_embedded_resources(response_content, filter='.*'):
-```
-
-A list of resources is created and returned
-
-```python
-resources = []
-    tree = html.fromstring(response_content)
-    for resource_path in resource_paths:
-        for resource in tree.xpath(resource_path):
-            if re.search(filter, resource): resources.append(resource)
-    return resources
-```
-Let’s look at an example HttpUser, which is analogous to the JMeter sampler.
-
-```python
-class HttpUserWithContent(HttpUser):
-    host = "https://www.demoblaze.com"
-    wait_time = constant(1)
-    
     @task
-    def t(self):
-        name = "/"
+    def include_resources_false(self):
+        name = "include_resources_false"
+        response = self.client.get("/", name=name, include_resources=False)
+
+    @task
+    def include_resources_missing(self):
+        name = "include_resources_default"
         response = self.client.get("/", name=name)
-        resources = get_embedded_resources(response.content)
-        for resource in resources:
-            if re.search("^https?://", resource) == None: resource = self.host + "/" + resource          
-            self.client.get(resource, name=name+"_resources")
 ```
-We have captured the response and then used our get_embedded_resources function to return a list of resources and make the resource requests.
 
-Note: if you are using the FastHttpUser, you will need to decode the content first.
+Let's break it down.
 
 ```python
-content.decode("utf-8")
+from plugins.embedded_resource_manager import EmbeddedResourceManager
+
+class MyWebsiteUser(FastHttpUser):
+    
+    def on_start(self):
+        EmbeddedResourceManager(self)
 ```
 
-We check to see if the resource is a full or partial url and prefix the host if not (later, we will check for the use of a base tag)
+First we need to reference the plugin and create an instance in the on_start function of your test class. In this case we are using FastHttpUser, but it will work equally well with HttpUser.
+
+There are several options that can be set when instantiating. By default the options are as following:
+
 ```python
-if re.search("^https?://", resource) == None:
+    EmbeddedResourceManager(self,include_resources_by_default=False, default_resource_filter=".*", bundle_resource_stats=True, cache_resource_links=True)
 ```
-To keep reporting simple we have provided a name argument and then appended “_resources” to it for each resource request. We can change this to provide as much or as little information as we want.
+include_resources_by_default sets the default action for including calls to get embedded resources. This can be overridden for each request.
+
+default_resource_filter allows resources to be excluded from lookups based on a regular expression pattern.
+
+bundle_resource_stats determines whether the report shows each individual resource or just a single line under the same name '_resources', which will be appended to the name given for that request.
+
+cache_resource_links stores the list of links obtained for each unique response. By default it will be enabled but can be switched off if required.
+
+In this request, the include_resources has been set to true. This will retrieve the embedded resources in this page.
 ```python
-name=name+"_resources"
+    @task
+    def include_resources_true(self):
+        name = "include_resources_true"
+        response = self.client.get("/", name=name, include_resources=True)
 ```
-When we run it, we get a breakdown like this
 
-![Locust Dashboard](./resources/locust_dashboard.png "Locust Dashboard")
+In this request, include_resources is set to false so no resources will be obtained.
+```python
+    @task
+    def include_resources_false(self):
+        name = "include_resources_false"
+        response = self.client.get("/", name=name, include_resources=False)
+```
 
-If you would like any more information, just let me know.
+In this request, there is no include_resources flag so it will adopt the default behaviour, which in this case is to not include resources.
+```python
+    @task
+    def include_resources_missing(self):
+        name = "include_resources_default"
+        response = self.client.get("/", name=name)
+```
+
+When we run it, we get a breakdown like this:
+
+![Locust Dashboard](./resources/erm_locust_dashboard.png "Locust Dashboard")
+
+The example above is stored [here](./examples/EmbeddedResourceManager_example.py)

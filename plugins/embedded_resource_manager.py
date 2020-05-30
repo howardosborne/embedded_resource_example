@@ -7,15 +7,15 @@ class EmbeddedResourceManager:
     """
     provides features for finding and managing resources embedded in html
     """
-
-    def __init__(self, user, cache_resource_links=False, bundle_resource_stats=True):
+    def __init__(self, user, include_resources_by_default=False, default_resource_filter=".*", bundle_resource_stats=True, cache_resource_links=True):
 
         # store resource links for requests
         self.cache_resource_links = cache_resource_links
         self.resource_link_cache = {}
         # bundle all stats into single line for each request (_resources)
         self.bundle_resource_stats = bundle_resource_stats
-
+        self.resource_filter = default_resource_filter
+        self.include_resources = include_resources_by_default
         # for finding url links in style tags
         self.url_link_pattern = re.compile(
             r".*URL\(\s*('|\")(.*)('|\")\s*\).*",
@@ -42,17 +42,18 @@ class EmbeddedResourceManager:
             "//iframe/@src",
         ]
 
-        #
         self.client = user.client
         self.client.request = self._request(self.client.request)
         self.host = user.host
 
-    def get_embedded_resources(self, response_content, resource_filter=".*"):
+    def get_embedded_resources(self, response_content, **kwargs):
         """
         returns a list of embedded resources in response_content
         provide a regex filter to limit what resources are returned
         """
         resources = []
+        #check if defaults have been overridden for this request
+        resource_filter = kwargs.get("resource_filter", self.resource_filter)
         if self.cache_resource_links and response_content in self.resource_link_cache:
             resources = self.resource_link_cache[response_content]
         else:
@@ -84,7 +85,7 @@ class EmbeddedResourceManager:
                 if self.cache_resource_links:
                     self.resource_link_cache[response_content] = resources
             except etree.ParserError as e:
-                logging.warning("parser error: " + str(e) + str(response_content))
+                logging.warning(str(e) + " " + str(response_content))
         return resources
 
     def _request(self, func):
@@ -94,7 +95,7 @@ class EmbeddedResourceManager:
                 include_resources = kwargs["include_resources"]
                 del kwargs["include_resources"]
             else:
-                include_resources = False
+                include_resources = self.include_resources
 
             response = func(*args, **kwargs)
             if include_resources:
