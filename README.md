@@ -10,7 +10,7 @@ By default, JMeter uses the [Lagarto HTML Parser](https://jodd.org/lagarto/) to 
 
 So, how can we do this in Locust?
 
-Below is an example using the Embedded Resource Manager plugin, but if you want a simple guide to making something from scratch, have a look [here](.\manual_example.md) instead.
+Below is an example using the Embedded Resource Manager plugin, but if you want a simple guide to making something from scratch, have a look [here](./manual_example.md) instead.
 
 ```python
 from plugins.embedded_resource_manager import EmbeddedResourceManager
