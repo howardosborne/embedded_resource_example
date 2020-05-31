@@ -71,7 +71,7 @@ In this request, include_resources is set to false so no resources will be obtai
     @task
     def include_resources_false(self):
         response = self.client.get("/index.html", include_resources=False)
-
+```
 When we run it, we get a breakdown like this:
 
 ![Locust Dashboard](./resources/erm_locust_dashboard.png "Locust Dashboard")
