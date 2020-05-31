@@ -1,13 +1,73 @@
+from locust import HttpUser
+from locust.contrib.fasthttp import FastHttpUser
 from lxml import html, etree
 import logging
 import re
+
+
+class HttpUserWithResources(HttpUser):
+    """
+    provides embedded resource management for HttpUser
+    """
+
+    abstract = True
+
+    def __init__(
+        self,
+        *args,
+        include_resources_by_default=True,
+        default_resource_filter=".*",
+        bundle_resource_stats=True,
+        cache_resource_links=True
+    ):
+        super().__init__(*args)
+        EmbeddedResourceManager(
+            self,
+            include_resources_by_default,
+            default_resource_filter,
+            bundle_resource_stats,
+            cache_resource_links,
+        )
+
+
+class FastHttpUserWithResources(FastHttpUser):
+    """
+    provides embedded resource management for FastHttpUser
+    """
+
+    abstract = True
+
+    def __init__(
+        self,
+        *args,
+        include_resources_by_default=True,
+        default_resource_filter=".*",
+        bundle_resource_stats=True,
+        cache_resource_links=True
+    ):
+        super().__init__(*args)
+        EmbeddedResourceManager(
+            self,
+            include_resources_by_default,
+            default_resource_filter,
+            bundle_resource_stats,
+            cache_resource_links,
+        )
 
 
 class EmbeddedResourceManager:
     """
     provides features for finding and managing resources embedded in html
     """
-    def __init__(self, user, include_resources_by_default=False, default_resource_filter=".*", bundle_resource_stats=True, cache_resource_links=True):
+
+    def __init__(
+        self,
+        user,
+        include_resources_by_default,
+        default_resource_filter,
+        bundle_resource_stats,
+        cache_resource_links,
+    ):
 
         # store resource links for requests
         self.cache_resource_links = cache_resource_links
@@ -46,18 +106,13 @@ class EmbeddedResourceManager:
         self.client.request = self._request(self.client.request)
         self.host = user.host
 
-    def get_embedded_resources(self, response_content, **kwargs):
+    def get_embedded_resources(self, response_content, resource_filter):
         """
         returns a list of embedded resources in response_content
         provide a regex filter to limit what resources are returned
         """
         resources = []
-        #check if defaults have been overridden for this request
-        if "resource_filter" in kwargs:
-            resource_filter_pattern = re.compile(kwargs['resource_filter'])
-        else:
-            resource_filter_pattern = self.resource_filter_pattern
-
+        # check if defaults have been overridden for this request
         if self.cache_resource_links and response_content in self.resource_link_cache:
             resources = self.resource_link_cache[response_content]
         else:
@@ -73,7 +128,7 @@ class EmbeddedResourceManager:
                     for resource in tree.xpath(resource_path):
                         if re.search(self.full_url_pattern, resource) is None:
                             resource = base_path + "/" + resource
-                        if re.search(resource_filter_pattern, resource):
+                        if re.search(resource_filter, resource):
                             resources.append(resource)
                 # add style urls
                 style_tag_texts = tree.xpath("//style/text()")
@@ -84,7 +139,7 @@ class EmbeddedResourceManager:
                         resource = url_matches[2]
                         if re.search(self.full_url_pattern, resource) is None:
                             resource = base_path + "/" + resource
-                        if re.search(resource_filter_pattern, resource):
+                        if re.search(resource_filter, resource):
                             resources.append(resource)
                 if self.cache_resource_links:
                     self.resource_link_cache[response_content] = resources
@@ -101,20 +156,29 @@ class EmbeddedResourceManager:
             else:
                 include_resources = self.include_resources
 
+            if "resource_filter" in kwargs:
+                resource_filter = kwargs["resource_filter"]
+                del kwargs["resource_filter"]
+            else:
+                resource_filter = self.resource_filter_pattern
+
             response = func(*args, **kwargs)
+
             if include_resources:
                 content = response.content
                 if isinstance(content, bytearray):
                     content = content.decode("utf-8")
-                resources = self.get_embedded_resources(content)
-                name = kwargs.get("name", args[0])
+                resources = self.get_embedded_resources(content, resource_filter)
+                name = kwargs.get("name", args[1])
                 for resource in resources:
                     # determine name for the resource
                     if self.bundle_resource_stats:
                         resource_name = name + "_resources"
                     else:
                         resource_name = resource
-                    self.client.request("GET", resource, name=resource_name, include_resources=False)
+                    self.client.request(
+                        "GET", resource, name=resource_name, include_resources=False
+                    )
             return response
 
         return wrapper
