@@ -5,10 +5,8 @@ from locust import task, events
 import time
 
 class TestUserWithResources(HttpUserWithResources):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, include_resources_by_default=True, default_resource_filter=".*", bundle_resource_stats=True, cache_resource_links=False)
-
+    bundle_resource_stats=False
+    default_resource_filter=".*[^(js)]$"
     @task
     def include_resources_true(self):
         response = self.client.get("/", resource_filter=".*[^(js)]$")

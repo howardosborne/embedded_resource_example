@@ -12,21 +12,19 @@ class HttpUserWithResources(HttpUser):
 
     abstract = True
 
-    def __init__(
-        self,
-        *args,
-        include_resources_by_default=True,
-        default_resource_filter=".*",
-        bundle_resource_stats=True,
-        cache_resource_links=True
-    ):
+    include_resources_by_default=True
+    default_resource_filter=".*"
+    bundle_resource_stats=True
+    cache_resource_links=True
+
+    def __init__(self, *args):
         super().__init__(*args)
         EmbeddedResourceManager(
             self,
-            include_resources_by_default,
-            default_resource_filter,
-            bundle_resource_stats,
-            cache_resource_links,
+            self.include_resources_by_default,
+            self.default_resource_filter,
+            self.bundle_resource_stats,
+            self.cache_resource_links,
         )
 
 
@@ -37,23 +35,20 @@ class FastHttpUserWithResources(FastHttpUser):
 
     abstract = True
 
-    def __init__(
-        self,
-        *args,
-        include_resources_by_default=True,
-        default_resource_filter=".*",
-        bundle_resource_stats=True,
-        cache_resource_links=True
-    ):
+    include_resources_by_default=True
+    default_resource_filter=".*"
+    bundle_resource_stats=True
+    cache_resource_links=True
+
+    def __init__(self, *args):
         super().__init__(*args)
         EmbeddedResourceManager(
             self,
-            include_resources_by_default,
-            default_resource_filter,
-            bundle_resource_stats,
-            cache_resource_links,
+            self.include_resources_by_default,
+            self.default_resource_filter,
+            self.bundle_resource_stats,
+            self.cache_resource_links,
         )
-
 
 class EmbeddedResourceManager:
     """

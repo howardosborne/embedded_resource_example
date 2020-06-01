@@ -11,7 +11,7 @@ class TestERM(unittest.TestCase):
     def setUp(self):
         self.host = "http://localhost"
         self.client = client()
-        self.erm = EmbeddedResourceManager(self)
+        self.erm = EmbeddedResourceManager(self, include_resources_by_default=True, default_resource_filter=".*", bundle_resource_stats=True, cache_resource_links=True)
 
     def test_base(self):
         content = """
@@ -24,17 +24,17 @@ class TestERM(unittest.TestCase):
             </body>
         </html>
         """
-        resources = self.erm.get_embedded_resources(content)
+        resources = self.erm.get_embedded_resources(content,".*")
         self.assertRegex(resources[0],"http:\/\/basehost\/style.css")
 
     def test_empty(self):
         content = ""
-        resources = self.erm.get_embedded_resources(content)
+        resources = self.erm.get_embedded_resources(content,".*")
         self.assertEqual(len(resources), 0)
 
     def test_badly_formed_html(self):
         content = "<htfdf></>"
-        resources = self.erm.get_embedded_resources(content)
+        resources = self.erm.get_embedded_resources(content,".*")
         self.assertEqual(len(resources), 0)
 
     def test_resource_count(self):
@@ -49,7 +49,7 @@ class TestERM(unittest.TestCase):
             </body>
         </html>
         """
-        resources = self.erm.get_embedded_resources(content)
+        resources = self.erm.get_embedded_resources(content,".*")
         self.assertEqual(len(resources), 3)
 
     def test_style(self):
@@ -64,7 +64,7 @@ class TestERM(unittest.TestCase):
             </body>
         </html>
         """
-        resources = self.erm.get_embedded_resources(content)
+        resources = self.erm.get_embedded_resources(content,".*")
         self.assertRegex(resources[0],"http:\/\/localhost\/cheese.gif")
 
     def test_all_types(self):
@@ -93,7 +93,7 @@ class TestERM(unittest.TestCase):
             </body>
         </html>
         """
-        resources = self.erm.get_embedded_resources(content)
+        resources = self.erm.get_embedded_resources(content,".*")
         self.assertIn("http://localhost/style.css",resources)
         self.assertIn("http://localhost/ucase_style.css",resources)
         self.assertIn("http://localhost/cap_style.css",resources)
