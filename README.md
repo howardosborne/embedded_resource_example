@@ -11,9 +11,6 @@ import time
 
 class TestUserWithResources(HttpUserWithResources):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, include_resources_by_default=True, default_resource_filter=".*", bundle_resource_stats=True, cache_resource_links=False)
-
     @task
     def include_resources_true(self):
         response = self.client.get("/", resource_filter=".*[^(js)]$")
@@ -38,11 +35,13 @@ class TestUserWithResources(HttpUserWithResources):
 
 The first thing is to subclass HttpUserWithResources rather than HttpUser (or FastHttpUserWithResources in the case of FastHttpUser).
 That is all that is needed if accepting the default options and you can write the rest of your test as if using the standard HttpUser.
-However, if you want to change the default options, add the following:
+However, if you want to change the default options, the following class attributes are available:
 
 ```python
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, include_resources_by_default=True, default_resource_filter=".*", bundle_resource_stats=True, cache_resource_links=False)
+    include_resources_by_default=True
+    default_resource_filter=".*"
+    bundle_resource_stats=True
+    cache_resource_links=False
 ```
 include_resources_by_default sets the default action for including calls to get embedded resources. This can be overridden for each request.
 
